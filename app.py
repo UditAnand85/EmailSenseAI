@@ -3,6 +3,18 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="MailSenseAI", layout="wide")
 
+# ─── Receive credentials posted from the iframe ──────────────────────────────
+params = st.query_params
+if "email" in params and "password" in params:
+    st.session_state["email"]    = params["email"]
+    st.session_state["password"] = params["password"]
+
+# ─── Show credentials status (remove / hide in production) ───────────────────
+if "email" in st.session_state:
+    st.success(f"✅ Credentials received — logged in as: {st.session_state['email']}")
+else:
+    st.info("🔐 No credentials yet — open the Sign In modal to log in.")
+
 st.markdown("""
 <style>
   #MainMenu, footer, header { display: none !important; }
@@ -122,27 +134,20 @@ HTML = """<!DOCTYPE html>
   .ftr-legal a{font-size:.83rem;color:#475569;text-decoration:none;}
   .ftr-legal a:hover{color:#94a3b8;}
 
-  /* ── MODAL ──
-   * IFRAME FIX: position:fixed inside a scrollable iframe is relative
-   * to the iframe viewport top-left — not the screen. So when the user
-   * scrolls, "fixed" overlays drift off-screen.
-   *
-   * Solution: position:absolute overlay covering the full document,
-   * modal-box top/left set by JS to always land in the visible viewport.
-   * pointer-events:none on body (restored on the modal) blocks all
-   * background interaction while the modal is open.
-   */
+  /* ── MODAL ── */
   .modal-bg{
     display:none;
-    position:absolute;
+    position:fixed;
     top:0; left:0;
-    width:100%;
-    height:100%;
-    background:rgba(10,15,30,.75);
-    backdrop-filter:blur(6px);
+    width:100vw;
+    height:100vh;
+    background:rgba(0,0,0,0.6);
     z-index:9999;
   }
-
+  .modal-bg.show{
+    display:flex;
+    justify-content:center;
+  }
   .modal-box{
     background:#fff;
     border-radius:20px;
@@ -166,36 +171,49 @@ HTML = """<!DOCTYPE html>
   .f-ico{font-size:1rem;color:#9ca3af;flex-shrink:0;}
   .f-wrap input{border:none;outline:none;padding:13px 0;font-size:.93rem;color:#111;width:100%;font-family:'Roboto',sans-serif;background:transparent;}
   .f-wrap input::placeholder{color:#9ca3af;}
-  .f-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
-  .f-rem{display:flex;align-items:center;gap:8px;font-size:.87rem;color:#374151;cursor:pointer;}
-  .f-rem input{width:15px;height:15px;accent-color:#2563eb;cursor:pointer;}
+  .f-row{display:flex;align-items:center;justify-content:flex-end;margin-bottom:24px;}
   .f-frgt{font-size:.87rem;color:#2563eb;font-weight:500;text-decoration:none;cursor:pointer;}
   .f-frgt:hover{text-decoration:underline;}
   .modal-btn{width:100%;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;font-family:'Roboto',sans-serif;transition:background .2s;margin-bottom:20px;}
   .modal-btn:hover{background:#1d4ed8;}
+  .modal-btn:disabled{background:#93c5fd;cursor:not-allowed;}
   .modal-ft{text-align:center;font-size:.88rem;color:#6b7280;}
   .modal-ft a{color:#2563eb;font-weight:600;text-decoration:none;}
   .modal-note{margin-top:18px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:.81rem;color:#1e40af;line-height:1.5;text-align:center;}
 
-  .modal-bg {
-  display: none;
-  position: fixed;
+  /* ── FIELD ERROR / SUCCESS STATES ── */
+  .f-wrap.err   { border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.1) !important; }
+  .f-wrap.ok    { border-color:#22c55e !important; box-shadow:0 0 0 3px rgba(34,197,94,.1) !important; }
+  .f-hint       { font-size:.76rem; margin-top:5px; padding-left:2px; min-height:16px; display:block; }
+  .f-hint.err   { color:#ef4444; }
+  .f-hint.ok    { color:#16a34a; }
 
-  /* FORCE FULL SCREEN COVER */
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  /* ── SHOW/HIDE PASSWORD TOGGLE ── */
+  .pw-toggle { background:none; border:none; cursor:pointer; color:#9ca3af; font-size:.82rem; padding:0 2px; flex-shrink:0; user-select:none; transition:color .2s; }
+  .pw-toggle:hover { color:#374151; }
 
-  background: rgba(0,0,0,0.6);
-  z-index: 9999;
-}
+  /* ── CAPS LOCK WARNING ── */
+  .caps-warn      { display:none; font-size:.75rem; color:#f59e0b; margin-top:4px; padding-left:2px; }
+  .caps-warn.show { display:block; }
 
-/* SHOW MODAL */
-.modal-bg.show {
-  display: flex;
-  justify-content: center;
-}
+  /* ── LOADING SPINNER ── */
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .spinner { display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+
+  /* ── GMAIL-ONLY BADGE ── */
+  .gmail-badge { display:inline-flex; align-items:center; gap:5px; background:#fef9c3; border:1px solid #fde68a; border-radius:6px; padding:4px 10px; font-size:.74rem; color:#92400e; margin-bottom:18px; }
+
+  /* ── TOAST ── */
+  .toast{
+    position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+    background:#111827;color:#fff;padding:12px 24px;border-radius:10px;
+    font-size:.88rem;font-weight:500;opacity:0;pointer-events:none;
+    transition:opacity .3s;z-index:99999;white-space:nowrap;
+    box-shadow:0 8px 24px rgba(0,0,0,.3);
+  }
+  .toast.show{opacity:1;}
+  .toast.success{background:#16a34a;}
+  .toast.error{background:#dc2626;}
 </style>
 </head>
 <body>
@@ -210,8 +228,8 @@ HTML = """<!DOCTYPE html>
     <a onclick="goTo('s-secure')">Security</a>
   </div>
   <div class="nav-actions">
-    <button class="btn-si" onclick="openModal()">Sign In</button>
-    <button class="btn-st" onclick="openModal()">Start</button>
+    <button class="btn-si" id="btn-signin" onclick="openModal()">Sign In</button>
+    <button class="btn-st" id="btn-start"  onclick="openModal()">Start</button>
   </div>
 </nav>
 
@@ -331,44 +349,246 @@ HTML = """<!DOCTYPE html>
     <button class="modal-x" onclick="closeModal()">&times;</button>
     <div class="modal-title">Welcome Back</div>
     <div class="modal-sub">Sign in to access your AI inbox classifier</div>
-    <div class="f-group">
-      <label class="f-label">Gmail Address</label>
-      <div class="f-wrap"><span class="f-ico">&#9993;</span><input type="email" id="em" placeholder="you@gmail.com"/></div>
+
+    <!-- Gmail-only notice -->
+    <div style="text-align:center;">
+      <span class="gmail-badge">&#128231; Gmail accounts only</span>
     </div>
+
+    <!-- Email field -->
     <div class="f-group">
-      <label class="f-label">Google App Password</label>
-      <div class="f-wrap"><span class="f-ico">&#128274;</span><input type="password" id="pw" placeholder="xxxx xxxx xxxx xxxx"/></div>
+      <label class="f-label" for="em">Gmail Address</label>
+      <div class="f-wrap" id="em-wrap">
+        <span class="f-ico">&#9993;</span>
+        <input type="email" id="em" placeholder="you@gmail.com"
+               oninput="validateEmail()" onblur="validateEmail(true)"/>
+        <span id="em-tick" style="font-size:.9rem;display:none;"></span>
+      </div>
+      <span class="f-hint" id="em-hint"></span>
     </div>
+
+    <!-- Password field -->
+    <div class="f-group">
+      <label class="f-label" for="pw">Google App Password</label>
+      <div class="f-wrap" id="pw-wrap">
+        <span class="f-ico">&#128274;</span>
+        <input type="password" id="pw" placeholder="xxxx xxxx xxxx xxxx"
+               onblur="validatePassword(true)"
+               onkeyup="checkCaps(event)"/>
+        <button class="pw-toggle" type="button" onclick="togglePw()" id="pw-eye" title="Show / hide">&#128065;</button>
+      </div>
+      <span class="caps-warn" id="caps-warn">&#9650; Caps Lock is ON</span>
+      <span class="f-hint" id="pw-hint"></span>
+    </div>
+
     <div class="f-row">
-      <label class="f-rem"><input type="checkbox"/> Remember me</label>
-      <a class="f-frgt" href="#">How to get App Password?</a>
+      <a class="f-frgt" href="https://myaccount.google.com/apppasswords" target="_blank">Get App Password &#8599;</a>
     </div>
-    <button class="modal-btn" onclick="doSignIn()">Sign In &amp; Classify</button>
-    <div class="modal-ft">No account needed — just your Gmail &amp; <a href="#">App Password</a>.</div>
-    <div class="modal-note">&#128274; Credentials used only to fetch emails via SSL. Never stored or written to any file.</div>
+
+    <button class="modal-btn" id="signin-btn" onclick="doSignIn()">Sign In &amp; Classify</button>
+    <div class="modal-ft">No account needed — just your Gmail &amp; <a href="https://myaccount.google.com/apppasswords" target="_blank">App Password</a>.</div>
+    <div class="modal-note">&#128274; Credentials stored only in your browser's temporary session. Never written to any file or sent to any server.</div>
   </div>
 </div>
 
-  <script>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── SCROLL HELPER ───────────────────────────────────────────────────────────
+function goTo(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ─── TOAST HELPER ────────────────────────────────────────────────────────────
+function showToast(msg, type = '', duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => { t.className = 'toast'; }, duration);
+}
+
+// ─── EMAIL VALIDATION ────────────────────────────────────────────────────────
+function validateEmail(onBlur = false) {
+  const val   = document.getElementById('em').value.trim();
+  const wrap  = document.getElementById('em-wrap');
+  const hint  = document.getElementById('em-hint');
+  const tick  = document.getElementById('em-tick');
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!val) {
+    wrap.className = 'f-wrap';
+    hint.textContent = onBlur ? '⚠ Email is required.' : '';
+    hint.className = 'f-hint' + (onBlur ? ' err' : '');
+    tick.style.display = 'none';
+    return false;
+  }
+  if (!val.includes('@')) {
+    wrap.className = 'f-wrap err';
+    hint.textContent = '⚠ Missing "@" — e.g. you@gmail.com';
+    hint.className = 'f-hint err';
+    tick.style.display = 'none';
+    return false;
+  }
+  if (!emailRe.test(val)) {
+    wrap.className = 'f-wrap err';
+    hint.textContent = '⚠ Invalid format — use you@gmail.com';
+    hint.className = 'f-hint err';
+    tick.style.display = 'none';
+    return false;
+  }
+  if (!val.endsWith('@gmail.com')) {
+    wrap.className = 'f-wrap err';
+    hint.textContent = '⚠ Only @gmail.com addresses are supported.';
+    hint.className = 'f-hint err';
+    tick.style.display = 'none';
+    return false;
+  }
+  // All good
+  wrap.className = 'f-wrap ok';
+  hint.textContent = '✓ Looks good!';
+  hint.className = 'f-hint ok';
+  tick.textContent = '✅';
+  tick.style.display = 'inline';
+  return true;
+}
+
+// ─── PASSWORD VALIDATION ─────────────────────────────────────────────────────
+function validatePassword(onBlur = false) {
+  const val  = document.getElementById('pw').value;
+  const wrap = document.getElementById('pw-wrap');
+  const hint = document.getElementById('pw-hint');
+
+  if (!val) {
+    wrap.className = 'f-wrap';
+    hint.textContent = onBlur ? '⚠ App Password is required.' : '';
+    hint.className = 'f-hint' + (onBlur ? ' err' : '');
+    return false;
+  }
+
+  wrap.className = 'f-wrap ok';
+  hint.textContent = '✓ Password provided.';
+  hint.className = 'f-hint ok';
+  return true;
+}
+
+// ─── CAPS LOCK DETECTION ─────────────────────────────────────────────────────
+function checkCaps(e) {
+  const warn = document.getElementById('caps-warn');
+  if (e.getModifierState && e.getModifierState('CapsLock')) {
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+  }
+}
+
+// ─── SHOW / HIDE PASSWORD ────────────────────────────────────────────────────
+function togglePw() {
+  const inp = document.getElementById('pw');
+  const eye = document.getElementById('pw-eye');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    eye.textContent = '🙈';
+    eye.title = 'Hide password';
+  } else {
+    inp.type = 'password';
+    eye.textContent = '👁';
+    eye.title = 'Show password';
+  }
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
 function openModal() {
-  document.getElementById("modal-bg").classList.add("show");
-  document.body.style.overflow = "hidden";
-  document.body.style.height = "100vh"; // Prevent height shift
+  // Don't pre-fill credentials - always start fresh
+  document.getElementById('em').value = '';
+  document.getElementById('pw').value = '';
+  document.getElementById('modal-bg').classList.add('show');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeModal() {
-  document.getElementById("modal-bg").classList.remove("show");
-  document.body.style.overflow = "auto";
-  document.body.style.height = "auto"; // Reset height
+  document.getElementById('modal-bg').classList.remove('show');
+  document.body.style.overflow = 'auto';
 }
 
-// Close modal when clicking outside the box
-document.getElementById("modal-bg").addEventListener("click", function(e) {
-  if (e.target === this) {
-    closeModal();
-  }
+document.getElementById('modal-bg').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
 });
+
+// ─── KEYBOARD: Enter submits, Escape closes ───────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  const modal = document.getElementById('modal-bg');
+  if (!modal.classList.contains('show')) return;
+  if (e.key === 'Enter')  doSignIn();
+  if (e.key === 'Escape') closeModal();
+});
+
+// ─── SIGN IN ─────────────────────────────────────────────────────────────────
+function doSignIn() {
+  const emailOk = validateEmail(true);
+  const pwOk    = validatePassword(true);
+
+  if (!emailOk || !pwOk) {
+    const btn = document.getElementById('signin-btn');
+    btn.style.transform = 'translateX(-6px)';
+    setTimeout(() => btn.style.transform = 'translateX(6px)', 80);
+    setTimeout(() => btn.style.transform = 'translateX(0)',   160);
+    showToast('⚠️ Please fix the errors above.', 'error');
+    return;
+  }
+
+  const email    = document.getElementById('em').value.trim();
+  const password = document.getElementById('pw').value.trim();
+
+  // ── Save to sessionStorage ONLY (cleared when browser closes) ──────────────
+  sessionStorage.setItem('mailsense_email', email);
+  sessionStorage.setItem('mailsense_password', password);
+  localStorage.removeItem('mailsense_email');
+  localStorage.removeItem('mailsense_password');
+
+  // ── Send to Streamlit ────────────────────────────────────────────────────
+  const btn = document.getElementById('signin-btn');
+  btn.disabled   = true;
+  btn.innerHTML  = '<span class="spinner"></span>Connecting…';
+
+  try {
+    window.parent.postMessage({ type:'mailsense_credentials', email, password }, '*');
+    const parentUrl = new URL(window.parent.location.href);
+    parentUrl.searchParams.set('email',    email);
+    parentUrl.searchParams.set('password', password);
+    window.parent.history.replaceState({}, '', parentUrl.toString());
+
+    showToast('✅ Credentials saved! Streamlit is connecting…', 'success', 4000);
+    document.getElementById('btn-signin').textContent = '✓ ' + email.split('@')[0];
+    document.getElementById('btn-start').textContent  = 'Dashboard';
+
+    setTimeout(() => {
+      closeModal();
+      btn.disabled  = false;
+      btn.innerHTML = 'Sign In &amp; Classify';
+    }, 1500);
+
+  } catch(err) {
+    showToast('❌ Could not connect. Please try again.', 'error');
+    btn.disabled  = false;
+    btn.innerHTML = 'Sign In &amp; Classify';
+  }
+}
 </script>
+</body>
 </html>"""
 
 components.html(HTML, height=3200, scrolling=True)
+
+
+# ─── Access credentials anywhere in your backend ─────────────────────────────
+# After sign-in, use like this:
+#
+#   user     = st.session_state.get("email", "")
+#   password = st.session_state.get("password", "")
+#
+#   if user and password:
+#       main_conn = imaplib.IMAP4_SSL('imap.gmail.com')
+#       main_conn.login(user, password)
+#       ...
