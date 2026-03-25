@@ -1,0 +1,374 @@
+import streamlit as st
+import streamlit.components.v1 as components
+
+st.set_page_config(page_title="MailSenseAI", layout="wide")
+
+st.markdown("""
+<style>
+  #MainMenu, footer, header { display: none !important; }
+  section[data-testid="stSidebar"] { display: none !important; }
+  .block-container { padding: 0 !important; max-width: 100% !important; }
+  .stApp { background: #0f172a !important; }
+  iframe { width: 100% !important; border: none !important; display: block !important; }
+</style>
+""", unsafe_allow_html=True)
+
+HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{font-family:'Roboto',sans-serif;background:#fff;}
+
+  /* ── NAVBAR ── */
+  .nav{position:sticky;top:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:14px 48px;background:#fff;border-bottom:1px solid #e5e7eb;}
+  .nav-logo{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;color:#1d4ed8;letter-spacing:1px;cursor:pointer;}
+  .nav-links{display:flex;gap:28px;align-items:center;}
+  .nav-links a{color:#374151;font-size:.92rem;font-weight:500;text-decoration:none;cursor:pointer;transition:color .2s;}
+  .nav-links a:hover{color:#1d4ed8;}
+  .nav-actions{display:flex;gap:12px;align-items:center;}
+  .btn-si{font-size:.92rem;color:#374151;background:none;border:none;cursor:pointer;font-weight:500;padding:8px 14px;font-family:'Roboto',sans-serif;transition:color .2s;}
+  .btn-si:hover{color:#1d4ed8;}
+  .btn-st{font-size:.92rem;color:#fff;background:#1d4ed8;border:none;border-radius:6px;padding:9px 20px;cursor:pointer;font-weight:500;font-family:'Roboto',sans-serif;transition:background .2s;}
+  .btn-st:hover{background:#1e40af;}
+
+  /* ── HERO ── */
+  .hero{background:#6b7280;min-height:420px;display:flex;align-items:center;justify-content:center;padding:60px 20px;position:relative;}
+  .hero-ov{position:absolute;inset:0;background:rgba(0,0,0,.18);}
+  .hero-c{position:relative;text-align:center;max-width:660px;}
+  .hero-box{border:2px solid #6366f1;padding:18px 32px;margin-bottom:22px;display:inline-block;}
+  .hero-title{font-size:2.6rem;font-weight:700;color:#fff;line-height:1.2;}
+  .hero-sub{font-size:.95rem;color:#e5e7eb;line-height:1.6;margin-bottom:28px;}
+  .hero-sub strong{color:#fff;}
+  .hero-btns{display:flex;gap:14px;justify-content:center;}
+  .btn-hcta{font-size:.95rem;color:#111;background:#fff;border:1px solid #d1d5db;border-radius:5px;padding:10px 28px;cursor:pointer;font-weight:500;font-family:'Roboto',sans-serif;}
+  .btn-hlrn{font-size:.95rem;color:#fff;background:transparent;border:1px solid #fff;border-radius:5px;padding:10px 28px;cursor:pointer;font-weight:500;font-family:'Roboto',sans-serif;}
+  .hero-icon{position:absolute;right:10%;bottom:-10px;font-size:13rem;opacity:.08;pointer-events:none;}
+
+  /* ── HOW IT WORKS ── */
+  .hiw{background:#fff;padding:72px 48px 84px;text-align:center;}
+  .sec-title{font-size:2.4rem;font-weight:700;color:#111;margin-bottom:12px;}
+  .sec-sub{font-size:1rem;color:#6b7280;margin-bottom:52px;}
+  .hiw-cards{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;}
+  .hiw-card{background:#6b7280;border-radius:14px;border:1.5px solid #818cf8;padding:40px 24px 34px;flex:1;min-width:200px;max-width:250px;position:relative;text-align:center;transition:transform .22s,box-shadow .22s;}
+  .hiw-card:hover{transform:translateY(-5px);box-shadow:0 14px 36px rgba(99,102,241,.22);}
+  .hiw-badge{position:absolute;top:-15px;left:-10px;width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:700;border:2px solid #fff;}
+  .hiw-ico{width:64px;height:64px;background:#2563eb;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:1.65rem;}
+  .hiw-ct{font-size:1.02rem;font-weight:700;color:#fff;margin-bottom:13px;line-height:1.35;}
+  .hiw-cd{font-size:.86rem;color:#d1d5db;line-height:1.68;}
+
+  /* ── HOW TO USE ── */
+  .htu{background:#1d4ed8;padding:72px 64px;}
+  .htu-in{display:flex;gap:56px;align-items:center;max-width:1100px;margin:0 auto;}
+  .htu-l{flex:1;}
+  .htu-tag{display:inline-block;background:rgba(255,255,255,.15);color:#bfdbfe;font-size:.78rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:18px;}
+  .htu-h{font-size:2.1rem;font-weight:700;color:#fff;line-height:1.25;margin-bottom:20px;}
+  .htu-d{font-size:.97rem;color:#bfdbfe;line-height:1.8;margin-bottom:32px;}
+  .htu-stats{display:flex;gap:32px;flex-wrap:wrap;}
+  .stat-v{font-size:1.5rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+  .stat-chk{width:22px;height:22px;background:#22c55e;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;color:#fff;}
+  .stat-l{font-size:.82rem;color:#93c5fd;}
+  .htu-r{flex:1;}
+  .vid-box{background:rgba(255,255,255,.08);border:2px dashed rgba(255,255,255,.25);border-radius:16px;height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:rgba(255,255,255,.5);font-size:.92rem;}
+  .play-ico{width:56px;height:56px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+
+  /* ── FEATURES ── */
+  .feat{background:#f0f4ff;padding:80px 64px 88px;text-align:center;}
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1100px;margin:0 auto;}
+  .feat-card{background:#fff;border-radius:16px;border:1px solid #e5e7eb;padding:36px 28px 32px;text-align:left;transition:transform .22s,box-shadow .22s;}
+  .feat-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(37,99,235,.1);}
+  .feat-ico{width:56px;height:56px;background:#dbeafe;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:22px;}
+  .feat-t{font-size:1.05rem;font-weight:700;color:#111;margin-bottom:10px;}
+  .feat-d{font-size:.88rem;color:#4b5563;line-height:1.7;}
+
+  /* ── SECURITY ── */
+  .secure{background:#f9fafb;padding:80px 64px;}
+  .secure-in{display:flex;gap:56px;align-items:flex-start;max-width:1100px;margin:0 auto;}
+  .secure-l{flex:1.1;}
+  .secure-h{font-size:2.2rem;font-weight:700;color:#111;margin-bottom:22px;line-height:1.2;}
+  .secure-p{font-size:.97rem;color:#374151;line-height:1.8;margin-bottom:20px;}
+  .secure-p strong{color:#111;font-weight:700;}
+  .secure-r{flex:.9;}
+  .offer-card{background:#2563eb;border-radius:16px;padding:36px 32px;}
+  .offer-t{font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:28px;}
+  .offer-items{display:flex;flex-direction:column;gap:22px;}
+  .offer-item{display:flex;align-items:flex-start;gap:16px;}
+  .offer-dot{width:26px;height:26px;border-radius:50%;border:3px solid #fff;background:transparent;flex-shrink:0;margin-top:2px;position:relative;}
+  .offer-dot::after{content:'';position:absolute;inset:3px;background:#fff;border-radius:50%;}
+  .offer-it{font-size:.97rem;font-weight:700;color:#fff;margin-bottom:3px;}
+  .offer-id{font-size:.84rem;color:#bfdbfe;line-height:1.5;}
+
+  /* ── FOOTER ── */
+  .ftr{background:#0f172a;padding:60px 64px 0;}
+  .ftr-top{display:flex;gap:48px;max-width:1100px;margin:0 auto;padding-bottom:48px;}
+  .ftr-brand{flex:1.2;}
+  .ftr-logo{font-family:'Orbitron',sans-serif;font-size:1rem;color:#60a5fa;font-weight:900;margin-bottom:14px;letter-spacing:1px;}
+  .ftr-tag{font-size:.88rem;color:#94a3b8;line-height:1.7;margin-bottom:24px;max-width:220px;}
+  .ftr-soc{display:flex;gap:10px;}
+  .soc-btn{width:38px;height:38px;border-radius:50%;background:#1e293b;border:none;cursor:pointer;color:#94a3b8;font-size:.9rem;transition:background .2s,color .2s;font-family:'Roboto',sans-serif;}
+  .soc-btn:hover{background:#2563eb;color:#fff;}
+  .ftr-col{flex:1;}
+  .ftr-col-t{font-size:.92rem;font-weight:700;color:#fff;margin-bottom:20px;}
+  .ftr-col ul{list-style:none;display:flex;flex-direction:column;gap:11px;}
+  .ftr-col ul li a{color:#94a3b8;font-size:.87rem;text-decoration:none;cursor:pointer;transition:color .2s;}
+  .ftr-col ul li a:hover{color:#fff;}
+  .ftr-div{border:none;border-top:1px solid #1e293b;max-width:1100px;margin:0 auto;}
+  .ftr-bot{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto;padding:20px 0;}
+  .ftr-copy{font-size:.83rem;color:#475569;}
+  .ftr-legal{display:flex;gap:24px;}
+  .ftr-legal a{font-size:.83rem;color:#475569;text-decoration:none;}
+  .ftr-legal a:hover{color:#94a3b8;}
+
+  /* ── MODAL ──
+   * IFRAME FIX: position:fixed inside a scrollable iframe is relative
+   * to the iframe viewport top-left — not the screen. So when the user
+   * scrolls, "fixed" overlays drift off-screen.
+   *
+   * Solution: position:absolute overlay covering the full document,
+   * modal-box top/left set by JS to always land in the visible viewport.
+   * pointer-events:none on body (restored on the modal) blocks all
+   * background interaction while the modal is open.
+   */
+  .modal-bg{
+    display:none;
+    position:absolute;
+    top:0; left:0;
+    width:100%;
+    height:100%;
+    background:rgba(10,15,30,.75);
+    backdrop-filter:blur(6px);
+    z-index:9999;
+  }
+
+  .modal-box{
+    background:#fff;
+    border-radius:20px;
+    padding:44px 40px 36px;
+    width:440px;
+    max-width:calc(100vw - 40px);
+    position:absolute;
+    box-shadow:0 24px 60px rgba(0,0,0,.4);
+    animation:popIn .25s ease;
+    margin-top:100px;
+  }
+  @keyframes popIn{from{opacity:0;transform:translateY(-18px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .modal-x{position:absolute;top:16px;right:18px;background:none;border:none;font-size:1.4rem;color:#9ca3af;cursor:pointer;line-height:1;}
+  .modal-x:hover{color:#111;}
+  .modal-title{font-size:1.6rem;font-weight:700;color:#111;text-align:center;margin-bottom:6px;}
+  .modal-sub{font-size:.9rem;color:#6b7280;text-align:center;margin-bottom:32px;}
+  .f-label{display:block;font-size:.88rem;font-weight:600;color:#374151;margin-bottom:7px;}
+  .f-group{margin-bottom:20px;}
+  .f-wrap{display:flex;align-items:center;border:1.5px solid #d1d5db;border-radius:10px;padding:0 14px;gap:10px;transition:border-color .2s,box-shadow .2s;}
+  .f-wrap:focus-within{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+  .f-ico{font-size:1rem;color:#9ca3af;flex-shrink:0;}
+  .f-wrap input{border:none;outline:none;padding:13px 0;font-size:.93rem;color:#111;width:100%;font-family:'Roboto',sans-serif;background:transparent;}
+  .f-wrap input::placeholder{color:#9ca3af;}
+  .f-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+  .f-rem{display:flex;align-items:center;gap:8px;font-size:.87rem;color:#374151;cursor:pointer;}
+  .f-rem input{width:15px;height:15px;accent-color:#2563eb;cursor:pointer;}
+  .f-frgt{font-size:.87rem;color:#2563eb;font-weight:500;text-decoration:none;cursor:pointer;}
+  .f-frgt:hover{text-decoration:underline;}
+  .modal-btn{width:100%;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;font-family:'Roboto',sans-serif;transition:background .2s;margin-bottom:20px;}
+  .modal-btn:hover{background:#1d4ed8;}
+  .modal-ft{text-align:center;font-size:.88rem;color:#6b7280;}
+  .modal-ft a{color:#2563eb;font-weight:600;text-decoration:none;}
+  .modal-note{margin-top:18px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:.81rem;color:#1e40af;line-height:1.5;text-align:center;}
+
+  .modal-bg {
+  display: none;
+  position: fixed;
+
+  /* FORCE FULL SCREEN COVER */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+}
+
+/* SHOW MODAL */
+.modal-bg.show {
+  display: flex;
+  justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="nav">
+  <div class="nav-logo" onclick="goTo('s-home')">MailSenseAI</div>
+  <div class="nav-links">
+    <a onclick="goTo('s-hiw')">How It Works</a>
+    <a onclick="goTo('s-htu')">How To Use</a>
+    <a onclick="goTo('s-feat')">Features</a>
+    <a onclick="goTo('s-secure')">Security</a>
+  </div>
+  <div class="nav-actions">
+    <button class="btn-si" onclick="openModal()">Sign In</button>
+    <button class="btn-st" onclick="openModal()">Start</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="s-home" class="hero">
+  <div class="hero-ov"></div>
+  <div class="hero-icon">&#9993;</div>
+  <div class="hero-c">
+    <div class="hero-box"><h1 class="hero-title">Organize your email like<br>never before</h1></div>
+    <p class="hero-sub">MailSenseAI uses a local ML &amp; NLP pipeline to automatically classify your Gmail inbox.<br><strong>Enter your credentials, get your emails sorted — privately, instantly, on your machine.</strong></p>
+    <div class="hero-btns">
+      <button class="btn-hcta" onclick="openModal()">Get Started</button>
+      <button class="btn-hlrn" onclick="goTo('s-hiw')">Learn More</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div id="s-hiw" class="hiw">
+  <h2 class="sec-title">How It Works</h2>
+  <p class="sec-sub">Four simple steps — from login to a fully organised inbox in seconds</p>
+  <div class="hiw-cards">
+    <div class="hiw-card"><div class="hiw-badge">1</div><div class="hiw-ico">&#128231;</div><div class="hiw-ct">Enter Gmail &amp; App Password</div><p class="hiw-cd">You provide your Gmail address and a Google App Password. Credentials held only in session memory — never written to any file or disk.</p></div>
+    <div class="hiw-card"><div class="hiw-badge">2</div><div class="hiw-ico">&#128274;</div><div class="hiw-ct">Secure IMAP Connection</div><p class="hiw-cd">The app opens an encrypted SSL connection to Gmail via imaplib on port 993, fetches your emails into a temporary in-memory DataFrame.</p></div>
+    <div class="hiw-card"><div class="hiw-badge">3</div><div class="hiw-ico">&#129302;</div><div class="hiw-ct">ML &amp; NLP Pipeline Classifies</div><p class="hiw-cd">A trained ML model with NLP preprocessing — tokenization and TF-IDF — runs entirely on your machine, categorising each email automatically.</p></div>
+    <div class="hiw-card"><div class="hiw-badge">4</div><div class="hiw-ico">&#128202;</div><div class="hiw-ct">View Your Smart Dashboard</div><p class="hiw-cd">Results appear instantly on your Streamlit dashboard. Filter by category, scan priorities. Session ends — everything is wiped.</p></div>
+  </div>
+</div>
+
+<!-- HOW TO USE -->
+<div id="s-htu" class="htu">
+  <div class="htu-in">
+    <div class="htu-l">
+      <div class="htu-tag">Quick Start Guide</div>
+      <h2 class="htu-h">See MailSenseAI<br>in Action</h2>
+      <p class="htu-d">Getting started takes under 2 minutes. Open the app, enter your Gmail address and Google App Password, and hit Classify. MailSenseAI fetches your inbox, runs it through the local ML pipeline, and presents a fully categorised dashboard — no setup, no accounts, no cloud.</p>
+      <div class="htu-stats">
+        <div><div class="stat-v"><span class="stat-chk">&#10003;</span>&lt;2 min</div><div class="stat-l">To get started</div></div>
+        <div><div class="stat-v"><span class="stat-chk">&#10003;</span>100%</div><div class="stat-l">On-device processing</div></div>
+        <div><div class="stat-v"><span class="stat-chk">&#10003;</span>0 files</div><div class="stat-l">Stored on disk</div></div>
+      </div>
+    </div>
+    <div class="htu-r">
+      <div class="vid-box">
+        <div class="play-ico">&#9654;</div>
+        <span>Your demo video goes here</span>
+        <span style="font-size:.78rem;opacity:.6;">Drop an mp4 or embed a YouTube link</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div id="s-feat" class="feat">
+  <h2 class="sec-title">Powerful Features</h2>
+  <p class="sec-sub" style="margin-bottom:56px;">Everything you need to take control of your inbox and boost productivity</p>
+  <div class="feat-grid">
+    <div class="feat-card"><div class="feat-ico">&#129302;</div><div class="feat-t">ML-Powered Classification</div><p class="feat-d">A trained ML model with NLP preprocessing understands the context of every email and sorts it into the right category — no manual rules needed.</p></div>
+    <div class="feat-card"><div class="feat-ico">&#128274;</div><div class="feat-t">On-Device Privacy</div><p class="feat-d">All processing happens on your machine via an encrypted SSL/IMAP connection. Your emails never touch any external server or third-party service.</p></div>
+    <div class="feat-card"><div class="feat-ico">&#9889;</div><div class="feat-t">Lightning Fast Results</div><p class="feat-d">The NLP pipeline — tokenization, TF-IDF and model inference — runs locally in seconds, delivering a fully classified inbox almost instantly.</p></div>
+    <div class="feat-card"><div class="feat-ico">&#128200;</div><div class="feat-t">Smart Inbox Dashboard</div><p class="feat-d">A clean Streamlit dashboard lets you filter by category, scan by sender or subject, and focus only on what matters.</p></div>
+    <div class="feat-card"><div class="feat-ico">&#127991;</div><div class="feat-t">Multi-Category Labelling</div><p class="feat-d">Emails classified into Work, Personal, Promotions, Spam, Finance, and more — giving you a structured, clutter-free inbox every time.</p></div>
+    <div class="feat-card"><div class="feat-ico">&#128260;</div><div class="feat-t">Session-Based &amp; Stateless</div><p class="feat-d">No accounts, no data stored. Enter credentials, get results, close the app — everything wiped. Every session starts completely fresh.</p></div>
+  </div>
+</div>
+
+<!-- SECURITY -->
+<div id="s-secure" class="secure">
+  <div class="secure-in">
+    <div class="secure-l">
+      <h2 class="secure-h">Why MailSenseAI<br>Is Secure</h2>
+      <p class="secure-p">MailSenseAI uses your <strong>Gmail App Password</strong> — a special 16-character password from your Google account granting limited, revocable inbox access. Your real password is never entered.</p>
+      <p class="secure-p">Connection uses Python's <strong>imaplib</strong> over encrypted SSL/TLS on port 993. Credentials live only in RAM for the active session — <strong>never written to any file, database, or disk</strong>.</p>
+      <p class="secure-p">All email classification happens <strong>100% on your own machine</strong>. Email content is never sent to any external server, cloud API, or third-party service.</p>
+      <p class="secure-p">When your session ends, <strong>all data is cleared from memory automatically</strong>. No database, no logs, no persistent storage of any kind.</p>
+    </div>
+    <div class="secure-r">
+      <div class="offer-card">
+        <div class="offer-t">What Keeps You Safe</div>
+        <div class="offer-items">
+          <div class="offer-item"><div class="offer-dot"></div><div><div class="offer-it">Google App Password — Not Your Real Password</div><div class="offer-id">Limited-access, revocable from your Google account anytime</div></div></div>
+          <div class="offer-item"><div class="offer-dot"></div><div><div class="offer-it">Encrypted SSL Connection via imaplib</div><div class="offer-id">All Gmail communication over TLS on port 993</div></div></div>
+          <div class="offer-item"><div class="offer-dot"></div><div><div class="offer-it">100% On-Device ML &amp; NLP Processing</div><div class="offer-id">Your emails never leave your machine — no cloud, no APIs</div></div></div>
+          <div class="offer-item"><div class="offer-dot"></div><div><div class="offer-it">Zero Persistence — Memory Only</div><div class="offer-id">No files, no logs, no database — session ends, data is gone</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="ftr">
+  <div class="ftr-top">
+    <div class="ftr-brand">
+      <div class="ftr-logo">MailSenseAI</div>
+      <p class="ftr-tag">Intelligent email classification powered by ML &amp; NLP. Organise your inbox and reclaim your time.</p>
+      <div class="ftr-soc">
+        <button class="soc-btn">&#120143;</button>
+        <button class="soc-btn">in</button>
+        <button class="soc-btn">&#9900;</button>
+      </div>
+    </div>
+    <div class="ftr-col"><div class="ftr-col-t">Product</div><ul><li><a onclick="goTo('s-feat')">Features</a></li><li><a onclick="goTo('s-hiw')">How It Works</a></li><li><a onclick="goTo('s-htu')">How To Use</a></li><li><a onclick="goTo('s-secure')">Security</a></li></ul></div>
+    <div class="ftr-col"><div class="ftr-col-t">Developer</div><ul><li><a href="#">GitHub Repository</a></li><li><a href="#">Documentation</a></li><li><a href="#">Model Details</a></li><li><a href="#">Changelog</a></li></ul></div>
+    <div class="ftr-col"><div class="ftr-col-t">Contact</div><ul><li><a href="#">About the Project</a></li><li><a href="#">Report a Bug</a></li><li><a href="#">LinkedIn</a></li><li><a href="#">Email Me</a></li></ul></div>
+  </div>
+  <hr class="ftr-div"/>
+  <div class="ftr-bot">
+    <span class="ftr-copy">&copy; 2026 MailSenseAI. All rights reserved.</span>
+    <div class="ftr-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Policy</a></div>
+  </div>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal-box">
+    <button class="modal-x" onclick="closeModal()">&times;</button>
+    <div class="modal-title">Welcome Back</div>
+    <div class="modal-sub">Sign in to access your AI inbox classifier</div>
+    <div class="f-group">
+      <label class="f-label">Gmail Address</label>
+      <div class="f-wrap"><span class="f-ico">&#9993;</span><input type="email" id="em" placeholder="you@gmail.com"/></div>
+    </div>
+    <div class="f-group">
+      <label class="f-label">Google App Password</label>
+      <div class="f-wrap"><span class="f-ico">&#128274;</span><input type="password" id="pw" placeholder="xxxx xxxx xxxx xxxx"/></div>
+    </div>
+    <div class="f-row">
+      <label class="f-rem"><input type="checkbox"/> Remember me</label>
+      <a class="f-frgt" href="#">How to get App Password?</a>
+    </div>
+    <button class="modal-btn" onclick="doSignIn()">Sign In &amp; Classify</button>
+    <div class="modal-ft">No account needed — just your Gmail &amp; <a href="#">App Password</a>.</div>
+    <div class="modal-note">&#128274; Credentials used only to fetch emails via SSL. Never stored or written to any file.</div>
+  </div>
+</div>
+
+  <script>
+function openModal() {
+  document.getElementById("modal-bg").classList.add("show");
+  document.body.style.overflow = "hidden";
+  document.body.style.height = "100vh"; // Prevent height shift
+}
+
+function closeModal() {
+  document.getElementById("modal-bg").classList.remove("show");
+  document.body.style.overflow = "auto";
+  document.body.style.height = "auto"; // Reset height
+}
+
+// Close modal when clicking outside the box
+document.getElementById("modal-bg").addEventListener("click", function(e) {
+  if (e.target === this) {
+    closeModal();
+  }
+});
+</script>
+</html>"""
+
+components.html(HTML, height=3200, scrolling=True)
