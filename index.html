@@ -505,8 +505,6 @@
 
     // Store in localStorage (⚠️ avoid storing password in real apps)
 
-    console.log(email)
-    console.log(password)
     const btn = document.getElementById("signin-btn");
     btn.disabled = true;
 
@@ -530,7 +528,6 @@
       });
 
       const result = await res.json();  // 👈 now this is TRUE or FALSE
-      console.log(result)
       clearInterval(interval);
 
       if (result.status === true) {
